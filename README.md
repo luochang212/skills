@@ -7,9 +7,9 @@
 | 技能 | 描述 |
 | -- | -- |
 | [github-research-assistant](skills/github-research-assistant/SKILL.md) | **GitHub 科研助理**：专为研究 GitHub 仓库设计，引导 Agent 分析代码仓库并生成详细的研究报告，涵盖基础信息、用途、技术栈、使用方法和技术架构五个维度。 |
-| [code-quality-reviewer](skills/code-quality-reviewer/SKILL.md) | **代码质量审查器**：系统性审查代码库质量问题，识别冗余代码、重复逻辑、命名问题等，基于"收益大于副作用"原则评估每个修复是否值得进行，避免过度工程化。 |
-| [deepsec](skills/deepsec/SKILL.md) | **AI 安全漏洞扫描**：基于 Agent 的深度安全审计工具，通过正则匹配 + AI 调查两阶段流程发现传统静态分析难以捕获的漏洞，支持完整审计和 PR 审查两种模式。 |
-| [semgrep](skills/semgrep/SKILL.md) | **Semgrep 静态分析**：快速开源静态分析工具，支持 30+ 语言。查找 bug、安全漏洞并强制执行编码规范，支持社区规则库和自定义规则。 |
+| [code-quality](skills/code-quality/SKILL.md) | **代码质量审查器**：系统性审查代码库质量问题，识别冗余代码、重复逻辑、命名问题等，基于"收益大于副作用"原则评估每个修复是否值得进行，避免过度工程化。 |
+| [code-audit](skills/code-audit/SKILL.md) | **代码安全审计**：双模式——快速模式（Semgrep）适合 CI 集成和模式搜索，深度模式（deepsec）通过 AI 调查进行可利用性判断。覆盖 30+ 语言，支持自定义规则和 PR Review。 |
+| [html-report](skills/html-report/SKILL.md) | **HTML 精美报告**：将信息转化为自包含的纯 HTML 页面，适合项目报告、产品页、架构概览、仪表盘、代码审查总结等场景。6 套色板、SVG 内联图表、零依赖，打开即用。 |
 | [md-to-pdf-macos](skills/md-to-pdf-macos/SKILL.md) | **Markdown 转 PDF（macOS）**：双后端方案——Playwright/Chromium 默认（语法高亮、LaTeX 公式、CSS 主题），reportlab 轻量回退（纯 Python）。CJK 完美支持。 |
 
 ## 安装方法

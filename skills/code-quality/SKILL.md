@@ -1,5 +1,5 @@
 ---
-name: code-quality-reviewer
+name: code-quality
 description: Use when the user asks to review code quality, find redundant code, audit duplication, or "clean up" a codebase. Also use when the user says "find issues" or "anything worth fixing" after a feature is built. This skill provides a systematic framework for identifying code quality issues, evaluating whether each fix is worth making, and safely applying changes without over-engineering.
 ---
 
@@ -19,19 +19,59 @@ For every potential fix, ask three questions:
 2. **Does it fix a real correctness/naming problem?** Unused imports, misleading names, dead code — fix these regardless of line count.
 3. **Does the abstraction add more complexity than it removes?** A shared component with 6 props and conditional logic that saves 4 lines of JSX is a net loss.
 
+## Judgment Heuristics
+
+Beyond the three questions, these heuristics help decide edge cases:
+
+### Explicit beats short
+
+- A set of near-identical functions whose shared shape is trivial (call API → invalidate cache) does not justify a factory. Each function is 5-6 lines and reads independently; a factory would add type parameters and argument wiring that obscure what each variant actually does. **Visible repetition is better than invisible intent.**
+- Abstract only when the shared logic is *non-trivial* — optimistic updates, rollback on error, retry with backoff. If the extraction doesn't reduce the reader's need to jump elsewhere, it's a net loss.
+
+### Semantic duplication ≠ mechanical duplication
+
+Two pieces of code that look the same aren't necessarily duplicates:
+
+- **Identical types at different layers** — a deserialization type and a public return type may share every field, but they belong to different contracts. Merging them couples the public API to upstream changes. This is *isolation*, not waste.
+- **Identical values with different meanings** — two keys mapping to the same value may encode distinct states. Collapsing them loses the explicit signal that "this case was considered and intentionally mapped." **Semantic clarity > eliminating a line.**
+- **Sequential `await` in a loop** — lint will flag it, but `for...await` with `break` on first error is intentional control flow, not a mistake. Suppress the rule, don't restructure to `Promise.all()`.
+
+### Don't design for hypotheticals
+
+- No helper functions, abstraction layers, or config switches unless there's a *second caller right now*.
+- "We might need this later" is not a valid reason.
+- **Three similar lines > one premature abstraction.**
+
+### Match the fix size to the problem size
+
+Don't over-engineer a fix, but don't let rot compound either:
+
+- **A two-line bug doesn't justify restructuring the module.** Patch it and move on. Rewriting the surrounding code for "consistency" is scope creep.
+- **A 50-line function that's grown 6 arms over 8 commits** — that's when refactoring pays for itself. The cost of understanding it has already exceeded the cost of cleaning it.
+- The test: *if I fix only the problem, will the next person still understand it?* Yes → patch. No → the surrounding code is part of the problem, refactor is fair game.
+- **Corollary:** every "while I'm here" cleanup line is a bet that you're the last person to touch this file before it ships. If the cleanup isn't related to the task, it should be a separate commit.
+
+### Follow existing patterns, or fix them all
+
+- A questionable pattern is either a project-wide convention or a project-wide problem. Fixing one instance creates inconsistency; fixing none maintains the status quo.
+- If the pattern isn't causing actual bugs, leave it alone. If it is, fix every instance in a dedicated commit — don't mix with feature work.
+
 ## Review Criteria
 
 When scanning files, look for these specific patterns:
 
 ### Always worth fixing
+
+- **Lint/fmt/typecheck errors** — zero controversy. Fix immediately.
 - **Unused imports** — dead code, remove immediately
 - **Dead code branches** — ternary with identical arms, unreachable code
 - **Misleading names** — e.g., a component named `Lazy` that isn't actually lazy-loaded
-- **Duplicate interface/types** — defined identically in two files
+- **Duplicate interface/types** — defined identically in two files (note: identical fields across API/public boundaries are *not* duplicates — see semantic duplication above)
 - **Imports after component definitions** — move to top
 - **Pointless wrappers** — `useCallback` that only forwards to another function, a function whose body is just calling another function with the same arguments
 
 ### Worth evaluating (benefit > side effect?)
+
 - **Duplicated logic** — same non-trivial expression in 2+ places
 - **Duplicated JSX structure** — same layout pattern repeated
 - **Dynamic imports in event handlers** — should be top-level
@@ -39,10 +79,14 @@ When scanning files, look for these specific patterns:
 - **Repeated boilerplate** — same 3-4 line pattern across files
 
 ### Usually NOT worth fixing
+
 - **Duplication in 2 files that will diverge** — e.g., card vs. row layouts
 - **Duplication of simple HTML shell** — a `<div>` with a className is not meaningful duplication
 - **Single-use abstraction opportunities** — "don't build abstractions for single-use paths"
 - **Trivial Set toggle** — `const next = new Set(x); next.has(y) ? next.delete(y) : next.add(y)` is clear enough inline
+- **Mechanical duplication with semantic difference** — two structs with identical fields but different layer responsibilities, two color keys with same value but different meanings
+- **Half-remediating a project-wide pattern** — fixing one instance of a repeated pattern while leaving others untouched creates inconsistency, not improvement. Fix all or fix none.
+- **"Extract to a file" that doesn't reduce duplication** — moving one-off code to a separate file is file shuffling, not refactoring. If it's not deduplication AND it's not enabling testing, leave it inline.
 
 ## The Workflow
 
@@ -89,17 +133,20 @@ After all fixes are applied, run the full verification suite: type checking and 
 ### Good fix: merge two nearly identical mutations
 An `useStar` and `useUnstar` hook (each ~18 lines) had identical optimistic update and rollback logic, differing only in the API call and a single boolean value. Extracted a parameterized factory function. Saved ~15 lines, no callers changed, tests passed as-is. **Correct: benefit > side effect.**
 
-### Good fix: remove pointless wrapper function
-A `useCallback` whose body only called another function with the same arguments. Replaced the two call sites with the inner function directly. Saved 3 lines and removed an unnecessary memo dependency. **Correct: benefit > side effect.**
-
 ### Good fix: rename misleading component
 A component was named `*Lazy` but used a static top-level import with no lazy loading. Renamed to `*Panel` to reflect reality. Zero line change, fixed misleading name. **Correct: fixes correctness issue.**
 
-### Bad fix: extract shared row component from two dialogs
-Two dialogs shared a 6-line JSX shell (a flex row with a label and toggle). But their substantive contents (status badges, disabled conditions, data sources) differed significantly. A shared component would need many props to accommodate the differences, saving ~4 lines of JSX while adding a new file and coupling two unrelated components. **Correctly skipped: side effect > benefit.**
+### Good skip: types with identical fields but different layer responsibilities
+API response type and public command return type had identical fields. Suggested merging into one struct to eliminate a manual `.map()`. Skipped: keeping API shape and public interface separate prevents upstream API changes from cascading into the command layer. **Semantic isolation > mechanical deduplication.**
 
-### Bad fix: extract shared card component from two settings rows
-Two adjacent settings cards shared outer layout structure but differed in icon behavior (one changes icon while pending, one doesn't) and disabled conditions. Extracting a shared component would replace inline JSX with a component definition plus props interface, net lines flat or negative. **Correctly skipped: premature abstraction.**
+### Good skip: repeated hook boilerplate
+A set of `useMutation` hooks shared the same query client + cache invalidation pattern. Suggested extracting a factory. Skipped: each hook is 5-6 lines with clearly visible mutation function and invalidation target at the call site. A factory would add type parameters and indirection without reducing meaningful complexity. **Explicit > short.**
+
+### Bad fix (correctly skipped): extract shared row component from two dialogs
+Two dialogs shared a 6-line JSX shell (a flex row with a label and toggle). But their substantive contents (status badges, disabled conditions, data sources) differed significantly. A shared component would need many props to accommodate the differences, saving ~4 lines of JSX while adding a new file and coupling two unrelated components. **Side effect > benefit.**
+
+### Bad fix (correctly skipped): extract shared card from two settings rows
+Two adjacent settings cards shared outer layout structure but differed in icon behavior (one changes icon while pending, one doesn't) and disabled conditions. Extracting a shared component would replace inline JSX with a component definition plus props interface, net lines flat or negative. **Premature abstraction: net zero gain with added indirection.**
 
 ## Parallel Editing Warning
 

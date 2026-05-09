@@ -1,11 +1,6 @@
----
-name: deepsec
-description: AI-powered vulnerability scanning with deepsec. Use when the user asks to audit security, scan for vulnerabilities, run a deep security audit, or review code for security issues. Also use when the user mentions "deepsec", "AI security scan", "agent-powered audit", "deep code audit", or wants to find hard-to-find vulnerabilities that grep/Semgrep would miss. Use for PR security review when the user mentions "review this PR for security" or "check these changes for vulnerabilities". Prefer this over semgrep when the user wants thorough, reasoning-based investigation rather than pattern matching.
----
+# deepsec — Deep AI Investigation
 
 > 适配 deepsec 2.x
-
-# deepsec
 
 ## Overview
 
@@ -16,9 +11,9 @@ deepsec is an agent-powered vulnerability scanner. It has two stages:
 
 It also has a **PR review mode** that collapses both into a single `--diff`-scoped invocation — fast, targeted, and CI-friendly.
 
-deepsec is complementary to Semgrep. Semgrep tells you "this line matches CWE-79". deepsec reads the surrounding 200 lines and tells you "this is exploitable because the input flows from `req.query.q` through the parser unescaped and reaches the DOM here."
+deepsec is complementary to pattern-based scanners. A pattern scanner tells you "this line matches CWE-79". deepsec reads the surrounding 200 lines and tells you "this is exploitable because the input flows from `req.query.q` through the parser unescaped and reaches the DOM here."
 
-**Announce at start:** "I'm using the deepsec skill to run an AI-powered security audit."
+**Announce at start:** "I'm using the Code Audit skill — deep audit mode."
 
 ## When to Use
 
@@ -27,10 +22,10 @@ deepsec is complementary to Semgrep. Semgrep tells you "this line matches CWE-79
 - User mentions "deepsec", "AI-powered scan", or "agent security audit"
 - User wants deeper investigation than static analysis can provide
 - User asks to "review this PR for security" or "scan my changes for vulns"
-- User has run Semgrep and wants to dig deeper on findings
+- User has run a pattern-based scanner and wants to dig deeper on findings
 
-**Don't use for:**
-- Quick grep/pattern search — use `grep` or `semgrep`
+**Don't use this mode for:**
+- Quick grep/pattern search — deepsec's AI investigation is too heavy for simple keyword matching; use the fast scan mode instead
 - Dependency vulnerability audit — use `npm audit` / `cargo audit`
 - Runtime testing / fuzzing — deepsec analyzes source code only
 

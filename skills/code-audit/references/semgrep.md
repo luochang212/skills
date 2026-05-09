@@ -1,9 +1,4 @@
----
-name: semgrep
-description: Static analysis and code scanning with Semgrep. Use when the user asks to scan code, find bugs, audit security, run SAST, or check for vulnerabilities. Also use when the user mentions "semgrep", "static analysis", "code scanning", "security scan", or wants to find patterns across a codebase.
----
-
-# Semgrep
+# Semgrep — Fast Pattern Scanning
 
 ## Overview
 
@@ -11,30 +6,28 @@ Semgrep is a fast, open-source static analysis tool — semantic grep for code. 
 
 **适配版本：** Semgrep 1.0+（使用 `semgrep scan` 新 CLI 语法）。
 
-**Announce at start:** "I'm using the Semgrep skill to scan the codebase."
+**Announce at start:** "I'm using the Code Audit skill — fast scan mode."
 
 ## When to Use
 
 ```dot
 digraph when_semgrep {
     "User asks to scan/audit/find bugs?" [shape=diamond];
-    "Use this skill" [shape=box];
+    "Use this mode" [shape=box];
     "User asks about security/SAST?" [shape=diamond];
-    "Use this skill" [shape=box];
+    "Use this mode" [shape=box];
     "User mentions semgrep/static analysis?" [shape=diamond];
-    "Use this skill" [shape=box];
+    "Use this mode" [shape=box];
     "User wants to find code patterns?" [shape=diamond];
-    "Use this skill" [shape=box];
-    "General code review (no scan tool)?" [shape=diamond];
-    "Use code-quality-reviewer" [shape=box];
+    "Use this mode" [shape=box];
 
-    "User asks to scan/audit/find bugs?" -> "Use this skill" [label="yes"];
+    "User asks to scan/audit/find bugs?" -> "Use this mode" [label="yes"];
     "User asks to scan/audit/find bugs?" -> "User asks about security/SAST?" [label="no"];
-    "User asks about security/SAST?" -> "Use this skill" [label="yes"];
+    "User asks about security/SAST?" -> "Use this mode" [label="yes"];
     "User asks about security/SAST?" -> "User mentions semgrep/static analysis?" [label="no"];
-    "User mentions semgrep/static analysis?" -> "Use this skill" [label="yes"];
+    "User mentions semgrep/static analysis?" -> "Use this mode" [label="yes"];
     "User mentions semgrep/static analysis?" -> "User wants to find code patterns?" [label="no"];
-    "User wants to find code patterns?" -> "Use this skill" [label="yes"];
+    "User wants to find code patterns?" -> "Use this mode" [label="yes"];
 }
 ```
 
@@ -45,9 +38,10 @@ digraph when_semgrep {
 - User asks "are there any security issues in this repo?"
 - User wants to write a custom Semgrep rule
 
-**Don't use for:**
-- General code review without a scan — use `code-quality-reviewer`
-- Runtime debugging — use `systematic-debugging`
+**Don't use this mode for:**
+- Deep investigation of whether a finding is exploitable — use the deep audit mode instead
+- General code review without a scan tool — Semgrep is a pattern-matching scanner, not a code review framework
+- Runtime debugging — Semgrep analyzes static code, it doesn't inspect running processes
 - Dependency audit (npm audit, cargo audit, etc.) — those are separate tools
 
 ## Quick Reference
