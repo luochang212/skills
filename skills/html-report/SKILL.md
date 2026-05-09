@@ -1,5 +1,5 @@
 ---
-name: html-fancy-report
+name: html-report
 description: Create beautiful, self-contained single-file HTML reports, landing pages, and documents that are visual, interactive, and spatial. Use when the user wants to present information that would benefit from layout, color, diagrams, or interaction — such as project reports, product pages, architecture overviews, design documents, dashboards, slide decks, code review summaries, incident post-mortems, status reports, or any document where plain text would be too flat. Triggers include "create an HTML page", "make a report", "write a landing page", "build a dashboard", "present this information visually", or any request to communicate technical or business information in a polished, readable format.
 compatibility: No dependencies required — pure HTML with inline CSS and JS
 ---
